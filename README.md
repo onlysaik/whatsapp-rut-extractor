@@ -1,91 +1,123 @@
-# WspImport — Automatizar WhatsApp a Excel
+# WhatsApp RUT Extractor
 
-> Extrae nombres y RUTs desde chats exportados de WhatsApp y/o fotos de carnet, y genera un archivo Excel listo para usar.
+Convierte un chat exportado de WhatsApp y fotos de carnet en un archivo Excel con personas registradas.
 
-## Estructura del proyecto
+Ideal para cuando necesitas consolidar datos de forma rapida, sin copiar y pegar manualmente.
 
-```
-parse_whatsapp_to_excel.py   # Script principal
-requirements.txt             # Dependencias Python
-imagenes_carnet/             # Carpeta para fotos de carnet (no se sube al repo)
-```
+## Que hace
 
----
+- Lee un archivo TXT exportado desde WhatsApp.
+- Detecta RUT, nombre y apellido en los mensajes.
+- Opcionalmente procesa imagenes de carnet con OCR (EasyOCR).
+- Genera un Excel con columnas: `Nombre`, `Apellido`, `Rut`.
+- Elimina duplicados por RUT (mantiene el ultimo registro encontrado).
 
-Este script toma un chat exportado de WhatsApp (TXT), detecta registros con nombre y RUT, y crea un Excel con columnas:
+## Requisitos
 
-- Nombre
-- Apellido
-- Rut
+- Python 3.10 o superior.
+- Dependencias en `requirements.txt`.
 
-## 1) Exportar chat de WhatsApp
+## Instalacion
 
-1. En WhatsApp abre el chat.
-2. Menu > Mas > Exportar chat.
-3. Elige "Sin archivos multimedia".
-4. Guarda el archivo TXT en este proyecto (por ejemplo `chat.txt`).
-
-## 2) Instalar dependencias
-
-En PowerShell, dentro de esta carpeta:
+1. Clona este repositorio.
+2. Entra a la carpeta del proyecto.
+3. Instala dependencias:
 
 ```powershell
 pip install -r requirements.txt
 ```
 
-## 3) Ejecutar
+## Uso rapido
+
+### 1) Exporta el chat de WhatsApp
+
+1. Abre el chat en WhatsApp.
+2. Ve a `Menu > Mas > Exportar chat`.
+3. Elige `Sin archivos multimedia`.
+4. Guarda el TXT (por ejemplo, `chat.txt`) en tu equipo.
+
+### 2) Ejecuta el script
+
+Solo chat TXT:
+
+```powershell
+python parse_whatsapp_to_excel.py --input chat.txt --output personas.xlsx
+```
+
+Chat + imagenes de carnet:
+
+```powershell
+python parse_whatsapp_to_excel.py --input chat.txt --images-dir imagenes_carnet --output personas.xlsx
+```
+
+Chat + imagenes de carnet con OCR paralelo (lotes grandes):
+
+```powershell
+python parse_whatsapp_to_excel.py --input chat.txt --images-dir imagenes_carnet --output personas.xlsx --ocr-workers 4
+```
+
+Con filtro por fecha minima:
 
 ```powershell
 python parse_whatsapp_to_excel.py --input chat.txt --output personas.xlsx --since-date 16/03/2026
 ```
 
-Si tambien quieres leer fotos de carnet desde una carpeta (`imagenes_carnet`):
+## Argumentos disponibles
 
-```powershell
-python parse_whatsapp_to_excel.py --input chat.txt --images-dir imagenes_carnet --output personas.xlsx --since-date 16/03/2026
-```
+- `--input` (obligatorio): ruta al TXT exportado de WhatsApp.
+- `--output` (opcional): ruta del Excel de salida. Por defecto: `personas.xlsx`.
+- `--since-date` (opcional): filtra mensajes desde una fecha minima (`DD/MM/AAAA`).
+- `--images-dir` (opcional): carpeta con imagenes de carnet para OCR.
+- `--ocr-workers` (opcional): cantidad de workers para OCR de imagenes. Por defecto: `1`.
 
-## 3.1) OCR con EasyOCR
+## Formato de salida
 
-La lectura de imagenes ahora usa `EasyOCR`.
+Se crea un archivo Excel con:
 
-- No necesita `tesseract.exe`.
-- No necesita configurar `PATH` en Windows.
-- Basta con instalar lo de `requirements.txt`.
+- `Nombre`
+- `Apellido`
+- `Rut`
 
-## 4) Resultado
-
-Se crea `personas.xlsx` con las columnas `Nombre`, `Apellido`, `Rut`.
-
-## Notas
-
-- Si un RUT aparece repetido, se deja el ultimo registro encontrado.
-- El script intenta detectar lineas con formato tipico de WhatsApp exportado.
-- El filtro `--since-date` aplica a los mensajes del chat TXT.
-- Para nombres compuestos, se guarda:
-  - Nombre: primera palabra
-  - Apellido: resto del nombre
-- Para imagenes de carnet, EasyOCR intenta detectar campos `NOMBRES`, `APELLIDOS` y `RUT`.
-- La primera ejecucion con OCR puede tardar mas porque EasyOCR descarga o prepara sus modelos.
-
-## Ejemplo rapido
-
-Mensaje en chat:
+Ejemplo de entrada en chat:
 
 ```text
 Nombre: Maria Jose Gonzalez Rut: 12.345.678-5
 ```
 
-Resultado en Excel:
+Ejemplo de salida:
 
 - Nombre: Maria
 - Apellido: Jose Gonzalez
 - Rut: 12345678-5
 
+## Consideraciones importantes
+
+- El script valida el digito verificador del RUT.
+- En OCR de carnet, se priorizan campos etiquetados como `NOMBRES` y `APELLIDOS` para reducir errores.
+- La primera ejecucion con OCR puede tardar mas, porque EasyOCR prepara modelos.
+- Se guarda un cache OCR en `imagenes_carnet/.ocr_cache.json` para acelerar ejecuciones posteriores.
+- `--ocr-workers` acelera imagenes no cacheadas; un valor entre `2` y `6` suele funcionar bien en CPU.
+- Si una imagen no tiene texto legible o esta borrosa, puede no extraerse ningun registro.
+
 ## Privacidad
 
-Las fotos de carnet y los archivos de chat **no se suben al repositorio** (están excluidos por `.gitignore`).
-La carpeta `imagenes_carnet/` existe en el repo pero su contenido es ignorado.
+- Los archivos de chat y fotos de carnet pueden contener datos sensibles.
+- Se recomienda no subirlos al repositorio.
+- La carpeta `imagenes_carnet/` esta pensada para uso local.
+
+## Solucion de problemas
+
+- `No se encontro el archivo de entrada`: revisa la ruta en `--input`.
+- `No se encontro la carpeta de imagenes`: revisa la ruta en `--images-dir`.
+- Error con `--since-date`: usa formato `DD/MM/AAAA`.
+
+## Estructura del proyecto
+
+```text
+parse_whatsapp_to_excel.py   # Script principal
+requirements.txt             # Dependencias Python
+imagenes_carnet/             # Carpeta local para imagenes
+```
 
 ## Licencia
 
