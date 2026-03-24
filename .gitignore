@@ -1,0 +1,36 @@
+# Entorno virtual
+.venv/
+venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+
+# Archivos de salida generados
+*.xlsx
+*.xls
+
+# Chat exportado (puede contener datos personales)
+chat.txt
+*.txt
+
+# Imagenes de carnet (datos sensibles / personales)
+imagenes_carnet/*
+!imagenes_carnet/.gitkeep
+
+# Modelos descargados por EasyOCR
+.EasyOCR/
+models/
+
+# Archivos de sistema Windows
+Thumbs.db
+desktop.ini
+
+# VS Code
+.vscode/
